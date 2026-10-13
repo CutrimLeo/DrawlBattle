@@ -1,0 +1,14 @@
+node_modules/
+dist/
+client/dist/
+.env
+.env.*
+!.env.example
+prisma/*.db*
+playwright-report/
+test-results/
+coverage/
+*.log
+.npm-cache/
+.npm-audit.json
+.qa/

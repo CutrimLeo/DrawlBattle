@@ -1,0 +1,12 @@
+import 'dotenv/config';
+import {networkInterfaces} from 'node:os';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+const port=Number(process.env.PORT??3001);
+const addresses=Object.entries(networkInterfaces()).flatMap(([name,entries])=>(entries??[]).filter(entry=>entry.family==='IPv4'&&!entry.internal).map(entry=>({name,address:entry.address}))).sort((a,b)=>Number(/wi-fi|wifi|wireless/i.test(b.name))-Number(/wi-fi|wifi|wireless/i.test(a.name)));
+console.log('DrawBattle — acesso pela rede local (mesmo Wi-Fi/rede):');
+for(const entry of addresses.filter(entry=>!/vethernet|wsl|docker|virtual|loopback/i.test(entry.name)))console.log(entry.name+': http://'+entry.address+':'+port);
+const server=spawn(process.execPath,['--env-file-if-exists=.env','dist/server/index.js'],{cwd:fileURLToPath(new URL('..',import.meta.url)),stdio:'inherit',env:{...process.env,HOST:'0.0.0.0',NODE_ENV:'production'}});
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.kill(signal));
+server.on('error',error=>{console.error(error.message);process.exitCode=1;});
+server.on('exit',code=>process.exit(code??0));

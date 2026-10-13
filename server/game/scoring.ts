@@ -1,0 +1,4 @@
+import type { Difficulty } from '../../shared/types.js';
+export function normalizeGuess(text: string): string { return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim().replace(/\s+/g, ' '); }
+export function computeScore(elapsedMs: number, durationMs: number, difficulty: Difficulty, order = 0): number { const factor = difficulty === 'hard' ? 1.5 : difficulty === 'medium' ? 1.25 : 1; const remaining = Math.max(0, Math.min(1, 1 - elapsedMs / Math.max(1, durationMs))); return Math.round((100 + 300 * remaining + Math.max(0, 60 - order * 15)) * factor); }
+export function sanitizeText(text: string): string { return [...text].filter(char => char.codePointAt(0)! >= 32 && char.codePointAt(0)! !== 127 && char !== '<' && char !== '>').join('').trim().replace(/\s+/g, ' '); }

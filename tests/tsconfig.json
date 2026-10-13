@@ -1,0 +1,20 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
+  },
+  "include": [
+    "./**/*.ts",
+    "../server/**/*.ts",
+    "../shared/**/*.ts",
+    "../prisma/seed.ts",
+    "../playwright.config.ts",
+    "../playwright.production.config.ts"
+  ]
+}

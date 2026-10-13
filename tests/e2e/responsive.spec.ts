@@ -1,0 +1,31 @@
+import {expect,test} from '@playwright/test';
+
+test('interface responsiva, tema e controles de sala em celular',async({page},testInfo)=>{
+  await page.setViewportSize({width:1440,height:1000});
+  await page.goto('/');
+  await expect(page.getByTestId('create-room')).toBeEnabled();
+  await page.screenshot({path:testInfo.outputPath('home-desktop.png'),fullPage:true});
+  await page.getByRole('button',{name:'Ativar modo escuro'}).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+  await page.screenshot({path:testInfo.outputPath('home-dark.png'),fullPage:true});
+  await page.getByRole('button',{name:'Ativar modo claro'}).click();
+  await page.setViewportSize({width:390,height:844});
+  await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('home-mobile.png'),fullPage:true});
+  await page.getByTestId('nickname-input').fill('Artista mobile');
+  await page.getByTestId('create-room').click();
+  await expect(page.getByTestId('room-code')).toBeVisible();
+  await expect(page.getByTestId('drawing-canvas')).toBeVisible();
+  await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('room-mobile.png'),fullPage:true});
+  await page.setViewportSize({width:1440,height:1000});
+  await page.screenshot({path:testInfo.outputPath('room-desktop.png'),fullPage:true});
+  await page.getByRole('button',{name:'Copiar convite'}).click();
+  await expect(page.getByRole('alert')).toContainText('Link da sala copiado!');
+  const code=(await page.getByTestId('room-code').textContent())!.trim();
+  const chat=page.getByTestId('chat-input');
+  await chat.fill(''); await chat.focus(); await chat.press('ControlOrMeta+V');
+  await expect(chat).toHaveValue(new URL(page.url()).origin+'/?room='+code);
+  await page.getByRole('button',{name:'Sair da sala'}).click();
+  await expect(page.getByTestId('create-room')).toBeVisible();
+});

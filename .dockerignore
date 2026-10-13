@@ -1,0 +1,9 @@
+node_modules
+.npm-cache
+.env
+.git
+client/dist
+dist
+prisma/*.db*
+test-results
+playwright-report

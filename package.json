@@ -1,0 +1,71 @@
+{
+  "name": "drawbattle",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Jogo de desenho e adivinhação multiplayer com WebSocket.",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n servidor,interface -c cyan,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:client": "vite --config client/vite.config.ts",
+    "db:setup": "node scripts/db-setup.mjs",
+    "db:seed": "tsx prisma/seed.ts",
+    "build": "npm run typecheck && vite build --config client/vite.config.ts && tsc -p server/tsconfig.json",
+    "start": "node scripts/start.mjs",
+    "typecheck": "tsc -p client/tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit && tsc -p tests/tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:production": "playwright test --config playwright.production.config.ts",
+    "db:migrate": "node scripts/migrate.mjs",
+    "start:lan": "npm run build && node scripts/start-lan.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "cors": "2.8.5",
+    "dotenv": "16.6.1",
+    "express": "4.22.3",
+    "express-rate-limit": "7.5.1",
+    "helmet": "8.1.0",
+    "lucide-react": "0.468.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-router-dom": "7.18.4",
+    "socket.io": "4.8.1",
+    "socket.io-client": "4.8.1",
+    "uuid": "11.1.1",
+    "zod": "3.25.76",
+    "zustand": "5.0.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "1.56.0",
+    "@types/cors": "2.8.19",
+    "@types/express": "4.17.23",
+    "@types/node": "22.18.10",
+    "@types/react": "19.1.16",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.4",
+    "autoprefixer": "10.4.21",
+    "concurrently": "9.2.5",
+    "eslint": "^9.39.0",
+    "postcss": "8.5.30",
+    "prisma": "6.19.3",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.2",
+    "vite": "7.3.7",
+    "vitest": "4.1.11",
+    "@tailwindcss/vite": "4.3.3"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0",
+    "effect": "^3.20.0"
+  }
+}
