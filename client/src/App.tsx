@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Check, CheckCheck, Clock3, Copy, Crown, DoorOpen, ExternalLink, Info, LoaderCircle, MessageCircle, Moon, Pencil, Play, Send, Settings2, ShieldCheck, Sparkles, Sun, Trophy, Users, Wifi, WifiOff, X } from 'lucide-react';
 import type { ChatMessage, Player, RoomSnapshot } from '../../shared/types';
 import { action, connectGame, enterRoom, leaveRoom, sendEvent, useGame } from './state/game';
@@ -37,30 +37,53 @@ function AppContent() {
 export function Home() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { code: routeCode } = useParams();
+  const invitationCode = (routeCode || params.get('room') || '').trim().toUpperCase();
   const { profile, setProfile, busy, connected, room, identity, activeRooms } = useGame();
-  const [code, setCode] = useState(params.get('room') || '');
+  const [code, setCode] = useState(invitationCode);
   const [formError, setFormError] = useState('');
-  useEffect(() => { if (room && identity) navigate('/room/' + room.code, { replace: true }); }, [room, identity, navigate]);
+  useEffect(() => { setCode(invitationCode); setFormError(''); }, [invitationCode]);
+  useEffect(() => {
+    if (room && identity && (!invitationCode || room.code === invitationCode)) {
+      navigate('/room/' + room.code, { replace: true });
+    }
+  }, [room, identity, invitationCode, navigate]);
   async function submit(type: 'room:create' | 'room:join') {
+    if (useGame.getState().busy) return;
     setFormError('');
     if (profile.name.trim().length < 2) { setFormError('Seu apelido precisa ter pelo menos 2 letras.'); return; }
-    if (type === 'room:join' && !code.trim()) { setFormError('Digite o código da sala para entrar.'); return; }
-    try { const roomCode = await enterRoom(type, code); navigate('/room/' + roomCode); } catch { /* Server feedback appears in the toast. */ }
+    const targetCode = (invitationCode || code).trim().toUpperCase();
+    if (type === 'room:join' && !/^[A-Z0-9]{6}$/.test(targetCode)) { setFormError('Digite o código de 6 caracteres da sala para entrar.'); return; }
+    useGame.setState({ busy: true });
+    try {
+      const currentIdentity = useGame.getState().identity;
+      if (type === 'room:join' && currentIdentity) {
+        if (currentIdentity.roomCode === targetCode) { navigate('/room/' + targetCode); return; }
+        await leaveRoom();
+      }
+      const roomCode = await enterRoom(type, targetCode);
+      navigate('/room/' + roomCode);
+    } catch { /* Server feedback appears in the toast. */ }
+    finally { useGame.setState({ busy: false }); }
   }
   return <div className="home-page"><Header />
     <main className="home-main">
       <section className="entry-card" aria-labelledby="entry-heading">
-        <div className="entry-heading"><h1 id="entry-heading">Vamos jogar?</h1><p>Desenhe e adivinhe palavras com seus amigos.</p></div>
-        <form onSubmit={(event) => { event.preventDefault(); void submit('room:create'); }}>
+        <div className="entry-heading"><h1 id="entry-heading">{invitationCode ? 'Entrar na sala' : 'Vamos jogar?'}</h1><p>{invitationCode ? 'Você foi convidado para a sala ' + invitationCode + '.' : 'Desenhe e adivinhe palavras com seus amigos.'}</p></div>
+        <form onSubmit={(event) => { event.preventDefault(); void submit(invitationCode ? 'room:join' : 'room:create'); }}>
           <label className="field-label" htmlFor="nickname">Seu apelido</label>
           <div className="input-wrap nickname-wrap"><Avatar avatar={profile.avatar} small /><input id="nickname" data-testid="nickname-input" autoComplete="nickname" maxLength={24} placeholder="Digite seu apelido" value={profile.name} onChange={(event) => setProfile({ name: event.target.value })} aria-describedby={formError ? 'form-error' : undefined} /></div>
           <div className="field-label avatar-label">Avatar</div><AvatarPicker value={profile.avatar} onChange={(avatar) => setProfile({ avatar })} />
           {formError && <p id="form-error" className="form-error" role="alert">{formError}</p>}
-          <button data-testid="create-room" type="submit" className="button button-primary create-button" disabled={busy || !connected}>{busy && <LoaderCircle className="spin" size={18} />}Criar sala</button>
-          <div className="divider"><span />ou entre em uma sala<span /></div>
-          <label className="field-label" htmlFor="room-code-input">Código da sala</label>
-          <div className="join-fields"><div className="input-wrap code-wrap"><input id="room-code-input" data-testid="room-code-input" autoComplete="off" maxLength={8} placeholder="Ex.: ABC123" value={code} onChange={(event) => setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} /></div><button data-testid="join-room" type="button" className="button button-secondary" disabled={busy || !connected} onClick={() => void submit('room:join')}>Entrar</button></div>
+          {invitationCode && <><label className="field-label" htmlFor="room-code-input">Código da sala do convite</label><div className="input-wrap code-wrap invite-code"><input id="room-code-input" data-testid="room-code-input" value={invitationCode} readOnly /></div>{identity && identity.roomCode !== invitationCode && <p className="entry-note">Ao entrar, você sairá da sala {identity.roomCode}.</p>}</>}
+          <button data-testid={invitationCode ? 'join-room' : 'create-room'} type="submit" className="button button-primary create-button" disabled={busy || !connected}>{busy && <LoaderCircle className="spin" size={18} />}{invitationCode ? 'Entrar na sala' : 'Criar sala'}</button>
         </form>
+        {!invitationCode && <><div className="divider"><span />ou entre em uma sala<span /></div>
+          <form onSubmit={(event) => { event.preventDefault(); void submit('room:join'); }}>
+            <label className="field-label" htmlFor="room-code-input">Código da sala</label>
+            <div className="join-fields"><div className="input-wrap code-wrap"><input id="room-code-input" data-testid="room-code-input" autoComplete="off" maxLength={6} placeholder="Ex.: ABC123" value={code} onChange={(event) => setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} /></div><button data-testid="join-room" type="submit" className="button button-secondary" disabled={busy || !connected}>Entrar</button></div>
+          </form>
+        </>}
         <p className="entry-note">Sem cadastro · 2 a 12 jogadores</p>
       </section>
     </main>
@@ -75,14 +98,12 @@ function useCountdown(endsAt: number | null) {
 }
 function Room() {
   const { code } = useParams();
+  const requestedCode = (code || '').trim().toUpperCase();
   const navigate = useNavigate();
   const { room, identity, connected, connecting } = useGame();
   const [leaving, setLeaving] = useState(false);
-  useEffect(() => {
-    if (!identity && !room) navigate('/?room=' + encodeURIComponent(code || ''), { replace: true });
-  }, [identity, room, code, navigate]);
-  if (!room || !identity) return <div className="room-page"><Header /><div className="loading-room"><LoaderCircle size={32} className="spin" /><h2>{connecting ? 'Voltando para a sua sala...' : 'Preparando a sua sala...'}</h2><p>Sincronizando jogadores, desenhos e palpites.</p></div></div>;
-  if (room.code !== code) return <Navigate to={'/room/' + room.code} replace />;
+  if (!identity || identity.roomCode !== requestedCode) return <Home />;
+  if (!room || room.code !== requestedCode) return <div className="room-page"><Header /><div className="loading-room"><LoaderCircle size={32} className="spin" /><h2>{connecting ? 'Voltando para a sua sala...' : 'Preparando a sua sala...'}</h2><p>Sincronizando jogadores, desenhos e palpites.</p></div></div>;
   const me = room.players.find((player) => player.id === identity.playerId);
   const host = room.hostId === identity.playerId;
   async function leave() { setLeaving(true); try { await leaveRoom(); navigate('/'); } catch { setLeaving(false); } }
@@ -114,7 +135,9 @@ function RoomCode({ code }: { code: string }) {
 function PlayersPanel({ room, meId, host }: { room: RoomSnapshot; meId: string; host: boolean }) {
   const players = [...room.players].sort((a, b) => b.score - a.score);
   async function copyInvite() {
-    const inviteUrl = window.location.origin + '/?room=' + room.code;
+    const invite = new URL('/', window.location.origin);
+    invite.searchParams.set('room', room.code);
+    const inviteUrl = invite.href;
     if (await copyText(inviteUrl)) {
       useGame.setState({ error: 'Link da sala copiado! Compartilhe com a galera.' });
     } else {

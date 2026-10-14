@@ -56,6 +56,8 @@ Para desenvolvimento, npm run dev também aceita http://IP-DO-COMPUTADOR:5173; e
 7. Quando todos acertam, ou o prazo termina, o próximo jogador desenha. Cada rodada completa percorre todos os participantes.
 8. Ao terminar, confira o ranking e clique em jogar novamente.
 
+O convite usa o código da sala no link `/?room=CODIGO`. Ao abri-lo, a página apresenta esse código e o formulário de entrada; confirmar pelo botão ou por Enter entra na sala indicada. O endereço `/room/CODIGO` também permite essa entrada. Se houver sessão em outra sala, ela só é encerrada ao confirmar a entrada na sala do convite. Um convite para a própria sala restaura a mesma sessão.
+
 O token de sessão é mantido em sessionStorage, separado por aba. O perfil e o tema usam localStorage; preencha um apelido em cada aba para representar jogadores diferentes. Evite duplicar uma aba já conectada, pois o navegador pode copiar sua sessão. Uma queda breve restaura o mesmo jogador e o desenho da sala. O prazo de tolerância é controlado pelo servidor.
 
 ## Controles e regras

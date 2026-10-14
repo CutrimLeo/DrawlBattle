@@ -36,3 +36,11 @@ A falha foi reproduzida no IP HTTP: os dois botões mantinham um marcador anteri
 A página inicial passou a usar um formulário central compacto, título menor, texto curto e paleta neutra. Decorações de apresentação foram removidas; a sala de espera e os controles também receberam estilos discretos. O contraste dos botões e mensagens de erro foi ajustado no tema escuro.
 
 Build, TypeScript e lint passaram. Os três testes E2E existentes passaram pelo IP local: cópia/colagem real, partida com três navegadores e responsividade/tema. Capturas de desktop e celular foram inspecionadas. Uma verificação adicional em320px confirmou ausência de overflow na Home e acesso às três opções de palavra por rolagem. O botão móvel de sair recebeu um nome acessível.
+
+## Convites vinculados ao código da sala
+
+A falha foi reproduzida no build anterior pelo IP local: após abrir um convite e pressionar Enter no apelido, o navegador criava uma sala com outro código. Uma sessão anterior também podia redirecionar o convite para sua própria sala.
+
+O formulário agora mantém o código do convite em um campo somente leitura e envia a ação de entrada. Convites em /?room=CODIGO e acessos /room/CODIGO respeitam a mesma sala. A entrada manual por Enter no campo de código foi separada da criação. A sessão de outra sala permanece até o usuário confirmar a entrada; a sessão da própria sala é restaurada sem duplicação.
+
+Build, TypeScript e lint passaram. Os seis testes E2E passaram em HTTP pelo IP 192.168.5.98:3001: os três casos existentes de clipboard, partida e responsividade, além de três casos novos de convites. Os novos casos verificam o link realmente copiado e colado, Enter, código manual, rota direta, reconexão à própria sala, troca entre salas e código inexistente sem criar outra sala. O formulário de convite foi verificado e sua captura inspecionada em320px, sem overflow horizontal. Artefatos temporários de .qa foram excluídos do lint.
